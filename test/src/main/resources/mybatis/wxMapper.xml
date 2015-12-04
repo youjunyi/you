@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tt.repository.WxBatis">
+<select id="list" parameterType="Long" resultType="Map">
+select lc.fwfbh as fwfbh,lc.id as lcid ,lc.* , sj.id as sjid ,sj.*from lctab lc,shouji sj where lc.SHOUJI_ID = sj.id and lc.BIAOZHI !='完成' and user_id =#{userid}
+
+</select>
+<select id="querysywx" parameterType="Map" resultType="Map">
+select lc.fwfbh as fwfbh,lc.id as lcid ,lc.* , sj.id as sjid ,sj.*,jf.*
+from lctab lc,shouji sj,jiejuefanan jf  where lc.SHOUJI_ID = sj.id 
+and jf.id(+) = lc.jjfa_id
+
+<if test="name !=null and name != '' "> and sj.name like '%${name}%'  </if>
+<if test=" xlh !=null and xlh != '' "> and sj.jqxlh = #{jqxlh}</if>
+<if test=" imei !=null and imei != '' "> and sj.imei = #{imei}</if>
+<if test=" khdh !=null and khdh != '' "> and sj.dh =  #{dh}</if>
+<if test=" jqlx !=null and jqlx != '' "> and sj.JQXH like '%${JQXH}%'</if>
+<if test=" bxlx !=null and bxlx != '' "> and jf.bzfs = #{bzfs}</if>
+<if test="kssj !=null and kssj != '' ">and lc.kssj >= to_date(#{kssj},'yyyy/mm/dd HH24:MI:SS')</if>
+<if test=" jssj !=null and jssj != '' ">and lc.kssj <![CDATA[ <= to_date(#{jssj},'yyyy/mm/dd HH24:MI:SS')]]></if>
+<if test=" bh !=null and bh != '' "> and lc.bh= #{bh}</if>
+<if test=" fwfbh !=null and fwfbh != '' "> and lc.FWFBH= #{fwfbh}</if>
+</select>
+<select id="queryCosmeticsbytype" parameterType="long" resultType="Map">
+select * from cosmetics where type_id = #{typeid}
+</select>
+<select id="querycospp" parameterType="String"  resultType="Map">
+select * from cosmetics where cosmetics_name like '%${name}%'
+</select>
+<select id="queryzhuye" parameterType="String" resultType="Map">
+select * from cosmetics 
+
+ ORDER BY cosmetics_count DESC 
+
+ limit 0,10
+</select>
+<update id="updatemm"  >
+update user set password = #{password} where user_id= #{userid}
+</update>
+<insert id="savecar" parameterType="com.tt.entity.ShoppingCar">
+INSERT INTO shopping_car(cosmetics_id,buy_count,state,comstics_count,user_id) VALUES (#{cosmetics_id}, #{buy_count}, '未下订单', #{comstics_count},#{user_id})
+</insert>
+<select id="querycar" parameterType="long" resultType="Map">
+select * from shopping_car where user_id = #{user_id} and state = '未下订单'
+</select>
+<insert id="savecarsho">
+INSERT INTO cos_sho (cosmetics,shoppingid,buy_count,comstics_count) values(#{cosmetics_id},#{string},#{buy_count},#{comstics_count})
+</insert>
+<select id="querycarall" parameterType="long" resultType="Map">
+SELECT
+	sho.id as shoppid,
+	sho.state,
+	cs.buy_count,
+	cs.comstics_count,
+	cs.id as csid,
+	cos.*
+FROM
+	shopping_car AS sho,
+	cos_sho AS cs,
+	cosmetics cos
+WHERE
+	sho.id = cs.shoppingid
+AND cs.cosmetics = cos.cosmetics_id
+AND sho.user_id = #{user_id}
+AND sho.state = '未下订单'
+</select>
+<delete id="deletecar" parameterType="String">
+delete from cos_sho  where shoppingid = #{shoppid}
+</delete>
+<delete id="deletecarsp" parameterType="String">
+delete from cos_sho  where shoppingid = #{shoppid} and cosmetics = #{cosid}
+</delete>
+<insert id="savedt" parameterType="com.tt.entity.MyorderBen">
+INSERT INTO myorder (cosmetics_id,state,dizi,dianha,time,post_money,total_money,user_id) VALUES(#{cosmetics_id},#{state},#{dizi},#{dianha},#{time},#{post_money},#{total_money},#{user_id})
+</insert>
+<update id="updateshoopcar" parameterType="int" >
+update shopping_car SET state = '已下订单' where id=#{cosmetics_id}
+</update>
+<select id="querydtall" parameterType="int" resultType="Map">
+select * from myorder where user_id = #{user_id}
+</select>
+<select id="queryzixun"  parameterType="long" resultType="Map">
+select * from zixun where zixun_type= #{type}
+</select>
+<select id="getmyorder" resultType="Map">
+select m.*,u.username from myorder as m,user as u where state = '未发货' and m.user_id= u.user_id
+</select>
+<update id="updatemyorder" parameterType="long" >
+update myorder set state = '已发货' where id=#{id}
+</update>
+<select id="typetj" resultType="Map">
+select ct.type_id,ct.type_name,SUM(c.cosmetics_count) as cosmetics_count, 
+ SUM(c.cosmetics_sale_count) as cosmetics_sale_count from  cosmetic_type as ct 
+ LEFT JOIN cosmetics as c 
+ on  ct.type_id = c.type_id
+ group by ct.type_id,ct.type_name
+</select>
+<select id="typetjxx" parameterType="long" resultType="Map">
+select cosmetics_name,cosmetics_count,cosmetics_sale_count from cosmetics  where type_id = #{id}
+</select>
+</mapper>
